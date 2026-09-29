@@ -36,6 +36,10 @@
   }
   table.cabecalho .lbl{font-weight:bold;font-size:11px;white-space:nowrap;color:var(--azul-escuro);}
   input.campo-cab{border:none;outline:none;font-family:inherit;font-size:13px;background:transparent;}
+  input.campo-folhas{
+    width:46px;text-align:center;font-weight:bold;color:var(--azul-escuro);
+    border-bottom:1px solid var(--azul-escuro);
+  }
 
   /* ===== TABELAS ===== */
   table.padrao{width:100%;border-collapse:collapse;margin-top:4px;font-size:13px;}
@@ -46,6 +50,11 @@
   table.padrao td{border:1px solid var(--azul-escuro);padding:4px 8px;}
   table.padrao input, table.padrao select{
     width:100%;border:none;outline:none;font-family:inherit;font-size:13px;background:transparent;
+  }
+  .acao-linha{text-align:center;width:42px;}
+  .btn-remover-linha{
+    border:none;background:transparent;color:#dc2626;cursor:pointer;
+    font-size:18px;line-height:1;padding:0 6px;
   }
 
   .pauta{margin-top:12px;font-size:13px;}
@@ -107,8 +116,6 @@
     width:100%;border:none;outline:none;background:transparent;
     text-align:center;font-family:inherit;font-size:13px;margin-bottom:20px;
   }
-  .rodape-pagina{margin-top:30px;font-size:11px;text-align:right;color:#777;page-break-inside:avoid;}
-
   .acoes{width:210mm;margin:15px auto 0;display:flex;gap:10px;justify-content:center;}
   .acoes button{padding:10px 24px;font-size:14px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
   #btnPdf{background:var(--azul-escuro);color:#fff;}
@@ -118,8 +125,18 @@
     body{background:#fff;padding:0;}
     .folha{box-shadow:none;width:auto;min-height:auto;margin:0;padding:0;}
     .acoes{display:none;}
-    .btn-remover,.btn-add{display:none;}
-    @page{size:A4;margin:13mm;}
+    .btn-remover,.btn-remover-linha,.btn-add{display:none;}
+    .acao-linha{display:none;}
+    @page{
+      size:A4;
+      margin:13mm;
+      @bottom-right{
+        content:"Página " counter(page) " de " counter(pages);
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:11px;
+        color:#777;
+      }
+    }
   }
 </style>
 <base target="_blank">
@@ -137,7 +154,7 @@
   <!-- ===== CABEÇALHO ===== -->
   <table class="cabecalho">
     <tr>
-      <td rowspan="2" class="folhas">__ / __</td>
+      <td rowspan="2" class="folhas"><input class="campo-cab campo-folhas" type="text" value="__ / __" aria-label="Numeração das folhas"></td>
       <td rowspan="2" class="ata">ATA DE REUNIÃO</td>
       <td class="lbl">Data: <input class="campo-cab" style="width:100px;display:inline-block;" type="text" placeholder="__/__/____"></td>
       <td class="lbl">Início: <input class="campo-cab" style="width:55px;display:inline-block;" type="text" placeholder="__:__"></td>
@@ -149,8 +166,8 @@
   </table>
 
   <!-- ===== PARTICIPANTES ===== -->
-  <table class="padrao">
-    <tr><th colspan="2">PARTICIPANTES</th></tr>
+  <table class="padrao participantes">
+    <tr><th colspan="2">PARTICIPANTES</th><th class="acao-linha"></th></tr>
     <tr><td><input type="text" placeholder="Nome"></td><td><input type="text" placeholder="Cargo / Empresa"></td></tr>
     <tr><td><input type="text" placeholder="Nome"></td><td><input type="text" placeholder="Cargo / Empresa"></td></tr>
     <tr><td><input type="text" placeholder="Nome"></td><td><input type="text" placeholder="Cargo / Empresa"></td></tr>
@@ -230,8 +247,8 @@
 
   <!-- ===== QUADRO DE TAREFAS ===== -->
   <table class="padrao tarefas">
-    <tr><th colspan="4">Quadro de Tarefas</th></tr>
-    <tr><th>Item</th><th>Descrição</th><th>Responsável</th><th>Status</th></tr>
+    <tr><th colspan="4">Quadro de Tarefas</th><th class="acao-linha"></th></tr>
+    <tr><th>Item</th><th>Descrição</th><th>Responsável</th><th>Status</th><th class="acao-linha">Ação</th></tr>
     <tr><td class="item">01</td><td><input type="text" value="Apresentação dos Indicadores de Desempenho Mensal"></td><td><input type="text" placeholder="Responsável"></td><td class="status-col"><input type="text" placeholder="Ex.: Envio por e-mail"></td></tr>
     <tr><td class="item">02</td><td><input type="text" value="Saída dos veículos sem liberação da Gerenciadora"></td><td><input type="text" placeholder="Responsável"></td><td class="status-col"><input type="text" placeholder="Ex.: Em andamento"></td></tr>
     <tr><td class="item">03</td><td><input type="text" value="Cercas eletrônicas em áreas de Clientes e Coletas"></td><td><input type="text" placeholder="Responsável"></td><td class="status-col"><input type="text" placeholder="Ex.: Em andamento"></td></tr>
@@ -253,8 +270,6 @@
       <div class="traco">Nome / Cargo<br>Gerente de Contas</div>
     </div>
   </div>
-
-  <div class="rodape-pagina">Página 1 de 2</div>
 
 </div>
 
@@ -286,22 +301,52 @@ function removerTopico(btn){
   if(box.children.length > 1){ btn.closest('.topico').remove(); renumerar(); }
   else alert('É necessário manter pelo menos um tópico.');
 }
+function adicionarBotaoRemover(linha, descricao){
+  const celula = document.createElement('td');
+  celula.className = 'acao-linha';
+  const botao = document.createElement('button');
+  botao.type = 'button';
+  botao.className = 'btn-remover-linha';
+  botao.textContent = '×';
+  botao.title = `Remover ${descricao}`;
+  botao.setAttribute('aria-label', `Remover ${descricao}`);
+  botao.addEventListener('click', () => removerLinha(botao));
+  celula.appendChild(botao);
+  linha.appendChild(celula);
+}
+function removerLinha(btn){
+  btn.closest('tr').remove();
+  renumerarTarefas();
+}
+function renumerarTarefas(){
+  document.querySelectorAll('.tarefas .item').forEach((item, index) => {
+    item.textContent = String(index + 1).padStart(2, '0');
+  });
+}
+document.querySelectorAll('.participantes tbody tr').forEach(linha => {
+  if(linha.querySelector('input')) adicionarBotaoRemover(linha, 'participante');
+});
+document.querySelectorAll('.tarefas .item').forEach(item => {
+  adicionarBotaoRemover(item.closest('tr'), 'tarefa');
+});
 function addParticipante(){
-  const tb = document.querySelector('.padrao:not(.tarefas) tbody');
+  const tb = document.querySelector('.participantes tbody');
   const tr = document.createElement('tr');
   tr.innerHTML = '<td><input type="text" placeholder="Nome"></td><td><input type="text" placeholder="Cargo / Empresa"></td>';
+  adicionarBotaoRemover(tr, 'participante');
   tb.appendChild(tr);
   tr.querySelector('input').focus();
 }
 function addTarefa(){
   const tb = document.querySelector('.tarefas tbody');
-  const n = tb.children.length - 1;
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td class="item">${String(n).padStart(2,'0')}</td>
+  tr.innerHTML = `<td class="item"></td>
     <td><input type="text" placeholder="Descrição da tarefa"></td>
     <td><input type="text" placeholder="Responsável"></td>
     <td class="status-col"><input type="text" placeholder="Status"></td>`;
+  adicionarBotaoRemover(tr, 'tarefa');
   tb.appendChild(tr);
+  renumerarTarefas();
   tr.querySelector('input').focus();
 }
 function limparFormulario(){
